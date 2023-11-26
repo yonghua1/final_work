@@ -81,12 +81,22 @@ public:
     {
         putimagePng((int)x - iw / 2, (int)y - ih / 2, nowImage);
     }
+
+    bool isend()    //判断是否应当被清除
+    {
+        if (x + iw / 2 < 0 || x - iw / 2 > gw || y + ih / 2 < 0 || y - ih / 2 > gh) //出界
+        {
+            return 1;
+        }
+        return 0;
+    }
 };
 
 class EPlane :public Plane  //敌机类
 {
 private:
     int attacki = 50;   //攻击间隔，50帧，1秒
+    bool befor_isend = 0;   //记录先前状态，是否进过场
 public:
     int hp = 5; //生命数
 
@@ -129,6 +139,16 @@ public:
             bullet.push_back(Bullet(b, x, y, 4, 4, 0, 4));
         }
     }
+
+    bool isend()    //判断是否应当被清除
+    {
+        if (hp <= 0 || (x + iw / 2 < 0 || x - iw / 2 > gw || y + ih / 2 < 0 || y - ih / 2 > gh))   //血量为0或出界
+        {
+            if (befor_isend == 1 || hp <= 0) return 1;
+        }
+        else befor_isend = 1;
+        return 0;
+    }
 };
 
 class Player :public Plane   //自机类
@@ -139,7 +159,6 @@ public:
     int hp = 5; //生命数
     IMAGE* pbulletImage; //自机子弹贴图
     IMAGE* detectImage; //判定点贴图
-
 
     Player()    //无参构造
     {
@@ -340,19 +359,28 @@ public:
         }
 
         //时间无关区域
-        for (auto& t : pbullet) //自机子弹移动
+        for (auto t = pbullet.begin(); t != pbullet.end();) //自机子弹相关
         {
-            t.move();
+            auto tt = t;
+            t++;
+            tt->move();
+            if (tt->isend()) pbullet.erase(tt);
         }
-        for (auto& t : ebullet) //敌机子弹移动
+        for (auto t = ebullet.begin(); t != ebullet.end();) //敌机子弹相关
         {
-            t.move();
+            auto tt = t;
+            t++;
+            tt->move();
+            if (tt->isend()) ebullet.erase(tt);
         }
-        for (auto& t : eplane)  //敌机相关
+        for (auto t = eplane.begin(); t != eplane.end();)   //敌机相关
         {
-            t.move();
-            t.attack(ebullet, &ebulletImage[0]);
-            t.detect(pbullet);
+            auto tt = t;
+            t++;
+            tt->move();
+            tt->attack(ebullet, &ebulletImage[0]);
+            tt->detect(pbullet);
+            if (tt->isend()) eplane.erase(tt);
         }
         player->move();
         player->attack(pbullet);
@@ -368,11 +396,12 @@ public:
 
 void run()  //运行函数
 {
+    //加载三张自机相关图片
     IMAGE playerImage, pbulletImage, detectImage;
     loadimage(&playerImage, "images/me0.png");
     loadimage(&pbulletImage, "images/pbullet.png");
     loadimage(&detectImage, "images/detect.png");
-    Player player(&playerImage, 400, 500, 5, 5, &pbulletImage, &detectImage);
+    Player player(&playerImage, 400, 500, 5, 5, &pbulletImage, &detectImage);   //初始化自机
     Scene* scene = new Scene1();
     scene->init(&player);
     initgraph(gw, gh);
