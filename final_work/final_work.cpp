@@ -95,24 +95,38 @@ public:
 class EPlane :public Plane  //敌机类
 {
 private:
-    int attacki = 50;   //攻击间隔，50帧，1秒
     bool befor_isend = 0;   //记录先前状态，是否进过场
 public:
-    int hp = 5; //生命数
+    int hp; //生命数
+    int timek = 0;  //时间帧，1秒50帧
+    int sustain_time;   //持续最长时间
+    IMAGE* ebulletImage; //敌机子弹贴图
 
     EPlane()    //无参构造
     {
         ;
     }
 
-    EPlane(IMAGE* now, int xx, int yy, int ww, int hh) :Plane(now, xx, yy, ww, hh)  //有参构造
+    EPlane(IMAGE* now, int xx, int yy, int ww, int hh, int hp0, int st, IMAGE* e) :Plane(now, xx, yy, ww, hh)  //有参构造
+    {
+        hp = hp0;
+        sustain_time = st;
+        ebulletImage = e;
+    }
+
+    virtual void init() //初始化
     {
         ;
     }
 
-    void move()
+    virtual void move() //移动
     {
-        y += 2;
+        ;
+    }
+
+    virtual void attack(list<Bullet>& bullet)   //发射子弹，参数是子弹集合
+    {
+        ;
     }
 
     void detect(list<Bullet>& bullet)   //子弹与敌机判定
@@ -130,24 +144,51 @@ public:
         }
     }
 
-    void attack(list<Bullet>& bullet, IMAGE* b)   //发射子弹，参数是子弹集合与子弹图片
-    {
-        attacki--;
-        if (attacki <= 0)
-        {
-            attacki = 50;
-            bullet.push_back(Bullet(b, x, y, 4, 4, 0, 4));
-        }
-    }
-
     bool isend()    //判断是否应当被清除
     {
-        if (hp <= 0 || (x + iw / 2 < 0 || x - iw / 2 > gw || y + ih / 2 < 0 || y - ih / 2 > gh))   //血量为0或出界
+        if (hp <= 0 || (x + iw / 2 < 0 || x - iw / 2 > gw || y + ih / 2 < 0 || y - ih / 2 > gh) || timek > sustain_time)   //血量为0或出界或超过持续时间
         {
             if (befor_isend == 1 || hp <= 0) return 1;
         }
         else befor_isend = 1;
         return 0;
+    }
+};
+
+class EPlane1_1 :public EPlane   //第一关第一种敌机类，直线行动，直线发射子弹
+{
+private:
+
+public:
+    int vx, vy; //飞机xy速度
+    int bvx, bvy;   //子弹xy速度
+
+    EPlane1_1() //无参构造
+    {
+        ;
+    }
+
+    EPlane1_1(IMAGE* now, int xx, int yy, int ww, int hh, int hp0, int st, IMAGE* e, int vvx, int vvy, int vbx, int vby) :EPlane(now, xx, yy, ww, hh, hp0, st, e)//有参构造
+    {
+        vx = vvx;
+        vy = vvy;
+        bvx = vbx;
+        bvy = vby;
+    }
+
+    void move() //移动
+    {
+        x += vx;
+        y += vy;
+    }
+
+    void attack(list<Bullet>& bullet)   //发射子弹
+    {
+        timek++;
+        if (timek % 50 == 0) //每秒1发
+        {
+            bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
+        }
     }
 };
 
@@ -240,7 +281,7 @@ public:
     list<Bullet> pbullet;  //自机子弹集合
     list<Bullet> ebullet;   //敌机子弹集合
     vector<IMAGE> ebulletImage; //敌机子弹图片集合
-    list<EPlane> eplane;    //敌机集合
+    list<EPlane*> eplane;    //敌机集合
     vector<IMAGE> eplaneImage;  //敌机图片集合
     Player* player;         //自机指针
     IMAGE bk;               //背景图
@@ -282,7 +323,7 @@ public:
         //敌机显示
         for (auto& t : eplane)
         {
-            t.draw();
+            t->draw();
         }
 
         //自机子弹显示
@@ -311,7 +352,7 @@ public:
 class Scene1 :public Scene  //关卡1
 {
 private:
-
+    int sustain_time = 2000;
 public:
 
     Scene1()    //无参构造
@@ -348,12 +389,29 @@ public:
         //时间相关区域
         if (timek >= 200 && timek < 400)   //4~8秒
         {
-            if (timek % 50 == 0)    //每秒生成一个敌机
+            if (timek % 50 == 0)    //每秒从上方生成一个向下的敌机
             {
-                eplane.push_back(EPlane(&eplaneImage[0], gw/2, -100, 40, 40));
+                EPlane* t = new EPlane1_1(&eplaneImage[0], gw / 2, -100, 40, 40, 10, sustain_time - timek, &ebulletImage[0], 0, 2, 0, 4);
+                eplane.push_back(t);
             }
         }
-        if (timek > 1000)  //20秒
+        if (timek >= 500 && timek < 700)  //10~14秒
+        {
+            if (timek % 50 == 0) //每秒从左方生成一个向右的敌机
+            {
+                EPlane* t = new EPlane1_1(&eplaneImage[0], -100, 100, 40, 40, 10, sustain_time - timek, &ebulletImage[0], 2, 0, 0, 4);
+                eplane.push_back(t);
+            }
+        }
+        if (timek >= 1000 && timek < 1500) //20~30秒
+        {
+            if (timek % 100 == 0)    //每两秒从右方生成一个向左的敌机
+            {
+                EPlane* t = new EPlane1_1(&eplaneImage[0], gw+100, 250, 40, 40, 10, sustain_time - timek, &ebulletImage[0], -4, 0, 0, 4);
+                eplane.push_back(t);
+            }
+        }
+        if (timek > sustain_time)  //40秒
         {
             return 1;   //关卡结束
         }
@@ -373,14 +431,19 @@ public:
             tt->move();
             if (tt->isend()) ebullet.erase(tt);
         }
-        for (auto t = eplane.begin(); t != eplane.end();)   //敌机相关
+        for (auto t = eplane.begin(); t != eplane.end();)   //子弹相关
         {
             auto tt = t;
             t++;
-            tt->move();
-            tt->attack(ebullet, &ebulletImage[0]);
-            tt->detect(pbullet);
-            if (tt->isend()) eplane.erase(tt);
+            auto t0 = *tt;
+            t0->move();
+            t0->attack(ebullet);
+            t0->detect(pbullet);
+            if (t0->isend())
+            {
+                delete t0;
+                eplane.erase(tt);
+            }
         }
         player->move();
         player->attack(pbullet);
