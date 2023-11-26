@@ -27,4 +27,29 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="res.resx">
+      <Filter>资源文件</Filter>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\bk.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="images\detect.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="images\ebullet.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="images\enemy1.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="images\me0.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="images\pbullet.png">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

@@ -1,6 +1,7 @@
 ﻿// final_work.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
 //
 
+#include <stdio.h>
 #include <iostream>
 #include <graphics.h>
 #include <conio.h>
@@ -145,7 +146,7 @@ public:
         ;
     }
 
-    Player(IMAGE* now, int xx, int yy, int ww, int hh, IMAGE* p, IMAGE* d) :Plane(now, xx, yy, ww, hh)      //有参构造，p为自机子弹贴图
+    Player(IMAGE* now, int xx, int yy, int ww, int hh, IMAGE* p, IMAGE* d) :Plane(now, xx, yy, ww, hh)      //有参构造，p为自机子弹贴图，d为判定点贴图
     {
         pbulletImage = p;
         detectImage = d;
@@ -200,7 +201,7 @@ public:
 
     void attack(list<Bullet>& bullet)   //发射子弹，参数是子弹集合与子弹图片
     {
-        if (_kbhit()&&GetAsyncKeyState('z'))    //按z发射子弹
+        if (_kbhit()&&GetAsyncKeyState(0x5a))    //按z发射子弹
         {
             attacki--;
             if (attacki <= 0)
@@ -216,14 +217,15 @@ class Scene     //场景类，或者说关卡类，用于派生具体的的关�
 {
 private:
     int bky = 0;    //背景移动y
-    int timek = 0;  //时间，每秒50帧
 public:
     list<Bullet> pbullet;  //自机子弹集合
     list<Bullet> ebullet;   //敌机子弹集合
-    vector<IMAGE> ebulletImage; //敌机子弹图片合集
+    vector<IMAGE> ebulletImage; //敌机子弹图片集合
     list<EPlane> eplane;    //敌机集合
+    vector<IMAGE> eplaneImage;  //敌机图片集合
     Player* player;         //自机指针
     IMAGE bk;               //背景图
+    int timek = 0;  //时间帧，每秒50帧
 
     Scene() //无参构造
     {
@@ -247,7 +249,7 @@ public:
 
     virtual bool run()  //运行
     {
-        ;
+        return 1;
     }
 
     void draw() //显示，先显示背景，再显示敌机，再显示自机子弹，再显示自机，再显示敌机子弹，有的话最上层显示判定点
@@ -287,9 +289,108 @@ public:
     }
 };
 
+class Scene1 :public Scene  //关卡1
+{
+private:
+
+public:
+
+    Scene1()    //无参构造
+    {
+        ;
+    }
+
+    void init(Player* player) //初始化
+    {
+        IMAGE tImage[3];    //加载图片用临时变量
+
+        //加载背景图片
+        loadimage(&tImage[0], "images/bk.png");
+        bk = tImage[0];
+        gw = bk.getwidth();
+        gh = bk.getheight();    //根据背景图片改变gw,gh
+
+        //加载敌机图片
+        loadimage(&tImage[1], "images/enemy1.png");
+        eplaneImage.push_back(tImage[1]);
+
+        //加载敌机子弹图片
+        loadimage(&tImage[2], "images/ebullet.png");
+        ebulletImage.push_back(tImage[2]);
+
+        //加载自机
+        this->player = player;
+    }
+
+    bool run()
+    {
+        timek++;
+
+        //时间相关区域
+        if (timek >= 200 && timek < 400)   //4~8秒
+        {
+            if (timek % 50 == 0)    //每秒生成一个敌机
+            {
+                eplane.push_back(EPlane(&eplaneImage[0], gw/2, -100, 40, 40));
+            }
+        }
+        if (timek > 1000)  //20秒
+        {
+            return 1;   //关卡结束
+        }
+
+        //时间无关区域
+        for (auto& t : pbullet) //自机子弹移动
+        {
+            t.move();
+        }
+        for (auto& t : ebullet) //敌机子弹移动
+        {
+            t.move();
+        }
+        for (auto& t : eplane)  //敌机相关
+        {
+            t.move();
+            t.attack(ebullet, &ebulletImage[0]);
+            t.detect(pbullet);
+        }
+        player->move();
+        player->attack(pbullet);
+        player->detect(ebullet);    //自机相关
+
+        //显示
+        cleardevice();
+        draw();
+        FlushBatchDraw();
+        return 0;
+    }
+};
+
+void run()  //运行函数
+{
+    IMAGE playerImage, pbulletImage, detectImage;
+    loadimage(&playerImage, "images/me0.png");
+    loadimage(&pbulletImage, "images/pbullet.png");
+    loadimage(&detectImage, "images/detect.png");
+    Player player(&playerImage, 400, 500, 5, 5, &pbulletImage, &detectImage);
+    Scene* scene = new Scene1();
+    scene->init(&player);
+    initgraph(gw, gh);
+    BeginBatchDraw();
+    cleardevice();
+    Timer timer;
+    while (1)
+    {
+        if (scene->run()) break;
+        timer.Sleep(timeSleep);
+    }
+}
+
 int main()
 {
-    std::cout << "Hello World!\n";
+    run();
+
+    return 0;
 }
 
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
