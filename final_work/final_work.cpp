@@ -316,7 +316,7 @@ public:
 
     void attack(list<Bullet>& bullet, Player* player)   //发射子弹
     {
-        if (timek <= attack_time && timek % attacki == 0)
+        if (timek >= move_time && timek <= attack_time && timek % attacki == 0)
         {
             double angel = atan2(player->y - y, player->x - x);
             double bvx = bv * cos(angel), bvy = bv * sin(angel);
@@ -376,7 +376,7 @@ public:
 
     void attack(list<Bullet>& bullet, Player* player)   //发射子弹
     {
-        if (timek <= attack_time && timek % attacki == 0)
+        if (timek >= move_time && timek <= attack_time && timek % attacki == 0)
         {
             double angel = atan2(player->y - y, player->x - x);
             double bvx, bvy;
@@ -389,6 +389,59 @@ public:
                 bvy = bv * sin(angel - (2 * i - 1) * add_angel);
                 bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
             }
+        }
+    }
+};
+
+class EPlane3_1 :public EPlane  //第三关第一种敌机类，从屏幕外飞入到定点，随后攻击直到消失
+{
+private:
+    double angel = 0;   //角度
+    double angelv = 0;  //角速度
+    double angela = PI / 360;    //角加速度
+public:
+    int vx, vy; //自机xy速度
+    int move_time;  //移动时间，控制定点
+    double bv;  //子弹总速度
+
+    EPlane3_1() //无参构造
+    {
+        ;
+    }
+
+    EPlane3_1(IMAGE* now, int xx, int yy, int ww, int hh, int hp0, int st, IMAGE* e, int vvx, int vvy, int mt, double bbv) :EPlane(now, xx, yy, ww, hh, hp0, st, e)//有参构造
+    {
+        vx = vvx;
+        vy = vvy;
+        move_time = mt;
+        bv = bbv;
+    }
+
+    void move() //移动
+    {
+        timek++;
+        if (timek <= move_time)
+        {
+            x += vx;
+            y += vy;
+        }
+    }
+
+    void attack(list<Bullet>& bullet, Player* player)   //发射子弹
+    {
+        if (timek >=move_time)
+        {
+            angelv += angela;
+            angel += angelv;
+            double bvx = bv * cos(angel);
+            double bvy = bv * sin(angel);
+            bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
+            bvx = bv * cos(angel + PI * 2 / 3);
+            bvy = bv * sin(angel + PI * 2 / 3);
+            bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
+            bvx = bv * cos(angel - PI * 2 / 3);
+            bvy = bv * sin(angel - PI * 2 / 3);
+            bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
         }
     }
 };
@@ -472,7 +525,7 @@ public:
 class Scene1 :public Scene  //关卡1
 {
 private:
-    int sustain_time = 4000;
+    int sustain_time = 6000;
 public:
 
     Scene1()    //无参构造
@@ -566,7 +619,12 @@ public:
                 eplane.push_back(t);
             }
         }
-        if (timek > sustain_time)  //80秒
+        if (timek == 4250)     //第85秒
+        {
+            EPlane* t = new EPlane3_1(&eplaneImage[0], 370, -100, 40, 40, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
+            eplane.push_back(t);
+        }
+        if (timek > sustain_time)  //120秒
         {
             for (auto& t : eplane)  //释放所有未释放内存
             {
