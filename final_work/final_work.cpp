@@ -12,7 +12,7 @@
 #include "Timer.h"
 
 using namespace std;
-int gw = 600, gh = 400; //gw为窗口宽度，gh为窗口高度
+int gw = 800, gh = 600; //gw为窗口宽度，gh为窗口高度
 const int timeSleep = 20;   //1帧20ms，1秒50帧
 
 class Plane //飞机基类
@@ -525,7 +525,7 @@ public:
 class Scene1 :public Scene  //关卡1
 {
 private:
-    int sustain_time = 6000;
+    int sustain_time = 4000;
 public:
 
     Scene1()    //无参构造
@@ -540,8 +540,6 @@ public:
         //加载背景图片
         loadimage(&tImage[0], "images/bk.png");
         bk = tImage[0];
-        gw = bk.getwidth();
-        gh = bk.getheight();    //根据背景图片改变gw,gh
 
         //加载敌机图片
         loadimage(&tImage[1], "images/enemy1.png");
@@ -619,12 +617,7 @@ public:
                 eplane.push_back(t);
             }
         }
-        if (timek == 4250)     //第85秒
-        {
-            EPlane* t = new EPlane3_1(&eplaneImage[0], 370, -100, 40, 40, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
-            eplane.push_back(t);
-        }
-        if (timek > sustain_time)  //120秒
+        if (timek > sustain_time)  //80秒
         {
             for (auto& t : eplane)  //释放所有未释放内存
             {
@@ -674,6 +667,103 @@ public:
     }
 };
 
+class Scene2 :public Scene  //关卡2
+{
+private:
+    int sustain_time = 1900;
+public:
+
+    Scene2()    //无参构造
+    {
+        ;
+    }
+
+    void init(Player* player) //初始化
+    {
+        IMAGE tImage[3];    //加载图片用临时变量
+
+        //加载背景图片
+        loadimage(&tImage[0], "images/bk1.png");
+        bk = tImage[0];
+
+        //加载敌机图片
+        loadimage(&tImage[1], "images/enemy1.png");
+        eplaneImage.push_back(tImage[1]);
+
+        //加载敌机子弹图片
+        loadimage(&tImage[2], "images/ebullet.png");
+        ebulletImage.push_back(tImage[2]);
+
+        //加载自机
+        this->player = player;
+    }
+
+    bool run()
+    {
+        timek++;
+
+        //时间相关区域
+        if (timek == 100)     //第2秒
+        {
+            EPlane* t = new EPlane3_1(&eplaneImage[0], 370, -100, 40, 40, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
+            eplane.push_back(t);
+        }
+        if (timek > sustain_time)  //18秒
+        {
+            for (auto& t : eplane)  //释放所有未释放内存
+            {
+                delete t;
+            }
+            return 1;   //关卡结束
+        }
+
+        //时间无关区域
+        for (auto t = pbullet.begin(); t != pbullet.end();) //自机子弹相关
+        {
+            auto tt = t;
+            t++;
+            tt->move();
+            if (tt->isend()) pbullet.erase(tt);
+        }
+        for (auto t = ebullet.begin(); t != ebullet.end();) //敌机子弹相关
+        {
+            auto tt = t;
+            t++;
+            tt->move();
+            if (tt->isend()) ebullet.erase(tt);
+        }
+        for (auto t = eplane.begin(); t != eplane.end();)   //敌机相关
+        {
+            auto tt = t;
+            t++;
+            auto t0 = *tt;
+            t0->move();
+            t0->attack(ebullet, player);
+            t0->detect(pbullet);
+            if (t0->isend())
+            {
+                delete t0;
+                eplane.erase(tt);
+            }
+        }
+        player->move();
+        player->attack(pbullet);
+        player->detect(ebullet);    //自机相关
+
+        //显示
+        cleardevice();
+        draw();
+        setfillcolor(RED);
+        rectangle(0, 0, gw, 5);
+        if (!eplane.empty())
+        {
+            fillrectangle(0, 0, eplane.front()->hp * gw / 200, 5);
+        }
+        FlushBatchDraw();
+        return 0;
+    }
+};
+
 void run()  //运行函数
 {
     //加载三张自机相关图片
@@ -681,16 +771,52 @@ void run()  //运行函数
     loadimage(&playerImage, "images/me0.png");
     loadimage(&pbulletImage, "images/pbullet.png");
     loadimage(&detectImage, "images/detect.png");
-    Player player(&playerImage, 400, 500, 5, 5, &pbulletImage, &detectImage);   //初始化自机
-    Scene* scene = new Scene1();
-    scene->init(&player);
+
+    //初始化自机
+    Player player(&playerImage, 400, 500, 5, 5, &pbulletImage, &detectImage);
+
+    //场景初始化
+    int number = 1;
+    Scene* scene = nullptr;
+
+    //窗口初始化
     initgraph(gw, gh);
+    setbkmode(TRANSPARENT);
+    settextstyle(30, 0, "宋体");
     BeginBatchDraw();
     cleardevice();
     Timer timer;
     while (1)
     {
-        if (scene->run()) break;
+        if (scene == nullptr)
+        {
+            if (number == 1)
+            {
+                scene = new Scene1();
+            }
+            else if (number == 2)
+            {
+                scene = new Scene2();
+            }
+            else if (number >= 3)
+            {
+                break;
+            }
+            scene->init(&player);
+        }
+        if (scene->run())
+        {
+            char c[100];
+            sprintf_s(c, "恭喜通过第 %d 关！", number);
+            settextcolor(YELLOW);
+            outtextxy(300, 280, c);
+            FlushBatchDraw();
+            delete scene;
+            scene = nullptr;
+            number++;
+            timer.Sleep(2000);
+            continue;
+        }
         timer.Sleep(timeSleep);
     }
 }
