@@ -6,6 +6,7 @@
 #include <graphics.h>
 #include <conio.h>
 #include <math.h>
+#include <tchar.h>
 #include <list>
 #include <vector>
 #include "EasyXPng.h"
@@ -538,15 +539,15 @@ public:
         IMAGE tImage[3];    //加载图片用临时变量
 
         //加载背景图片
-        loadimage(&tImage[0], "images/bk.png");
+        loadimage(&tImage[0], _T("images/bk.png"));
         bk = tImage[0];
 
         //加载敌机图片
-        loadimage(&tImage[1], "images/enemy1.png");
+        loadimage(&tImage[1], _T("images/enemy1.png"));
         eplaneImage.push_back(tImage[1]);
 
         //加载敌机子弹图片
-        loadimage(&tImage[2], "images/ebullet.png");
+        loadimage(&tImage[2], _T("images/ebullet.png"));
         ebulletImage.push_back(tImage[2]);
 
         //加载自机
@@ -683,15 +684,15 @@ public:
         IMAGE tImage[3];    //加载图片用临时变量
 
         //加载背景图片
-        loadimage(&tImage[0], "images/bk1.png");
+        loadimage(&tImage[0], _T("images/bk1.png"));
         bk = tImage[0];
 
         //加载敌机图片
-        loadimage(&tImage[1], "images/enemy1.png");
+        loadimage(&tImage[1], _T("images/enemy1.png"));
         eplaneImage.push_back(tImage[1]);
 
         //加载敌机子弹图片
-        loadimage(&tImage[2], "images/ebullet.png");
+        loadimage(&tImage[2], _T("images/ebullet.png"));
         ebulletImage.push_back(tImage[2]);
 
         //加载自机
@@ -768,9 +769,9 @@ void run()  //运行函数
 {
     //加载三张自机相关图片
     IMAGE playerImage, pbulletImage, detectImage;
-    loadimage(&playerImage, "images/me0.png");
-    loadimage(&pbulletImage, "images/pbullet.png");
-    loadimage(&detectImage, "images/detect.png");
+    loadimage(&playerImage, _T("images/me0.png"));
+    loadimage(&pbulletImage, _T("images/pbullet.png"));
+    loadimage(&detectImage, _T("images/detect.png"));
 
     //初始化自机
     Player player(&playerImage, 400, 500, 5, 5, &pbulletImage, &detectImage);
@@ -782,7 +783,7 @@ void run()  //运行函数
     //窗口初始化
     initgraph(gw, gh);
     setbkmode(TRANSPARENT);
-    settextstyle(30, 0, "宋体");
+    settextstyle(30, 0, _T("宋体"));
     BeginBatchDraw();
     cleardevice();
     Timer timer;
@@ -806,10 +807,10 @@ void run()  //运行函数
         }
         if (scene->run())
         {
-            char c[100];
-            sprintf_s(c, "恭喜通过第 %d 关！", number);
+            TCHAR ct[100];
+            _stprintf_s(ct, "恭喜通过第 %d 关", number);
             settextcolor(YELLOW);
-            outtextxy(300, 280, c);
+            outtextxy(300, 280, ct);
             FlushBatchDraw();
             delete scene;
             scene = nullptr;
