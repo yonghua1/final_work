@@ -37,7 +37,7 @@ public:
         w = ww;
         h = hh;
         iw = now->getwidth();
-        ih = now->getwidth();
+        ih = now->getheight();
     }
 
     void draw() //显示
@@ -98,10 +98,18 @@ class Player :public Plane   //自机类
 {
 private:
     int attacki = 5;    //攻击间隔，5帧，0.1秒
+    int movei;  //移动图片确定
 public:
-    int hp = 5; //生命数
+    int hp = 0; //生命数   
     IMAGE* pbulletImage; //自机子弹贴图
-    IMAGE* detectImage; //判定点贴图
+    IMAGE* detectImage;  //判定点贴图
+    IMAGE stand;        //正常的图片
+    IMAGE left[25];     //向左的图片
+    IMAGE right[25];    //向右的图片
+    enum
+    {
+        LEFT,RIGHT,STAND
+    }bstatus,nstatus;    //状态枚举向量
 
     Player()    //无参构造
     {
@@ -114,8 +122,24 @@ public:
         detectImage = d;
     }
 
+    void init()
+    {
+        loadimage(&stand, "images/me0.png");
+        for (int i = 0; i < 25; i++)
+        {
+            char t[50];
+            sprintf_s(t, "images/Image%d.png", i + 1);
+            loadimage(left + i, t);
+            sprintf_s(t, "images/Image%d.png", i + 31);
+            loadimage(right + i, t);
+        }
+        bstatus = STAND;
+        nstatus = STAND;
+    }
+
     void move() //移动
     {
+        //键盘输入
         if (_kbhit())
         {
             int v = 5;
@@ -137,13 +161,56 @@ public:
             {
                 x -= v;
                 if (x - iw / 2 <= 0) x = iw / 2;
+                nstatus = LEFT;
             }
-            if (GetAsyncKeyState(VK_RIGHT))
+            else if (GetAsyncKeyState(VK_RIGHT))
             {
                 x += v;
                 if (x + iw / 2 >= gw) x = gw - iw / 2;
+                nstatus = RIGHT;
+            }
+            else
+            {
+                nstatus = STAND;
             }
         }
+        else
+        {
+            nstatus = STAND;
+        }
+
+        //图片更改
+        if (nstatus == STAND)
+        {
+            nowImage = &stand;
+        }
+        else if (nstatus == LEFT)
+        {
+            if (bstatus == LEFT)
+            {
+                movei++;
+                if (movei >= 25) movei = 24;
+            }
+            else
+            {
+                movei = 0;
+            }
+            nowImage = left + movei;
+        }
+        else
+        {
+            if (bstatus == RIGHT)
+            {
+                movei++;
+                if (movei >= 25) movei = 24;
+            }
+            else
+            {
+                movei = 0;
+            }
+            nowImage = right + movei;
+        }
+        bstatus = nstatus;
     }
 
     void detect(list<Bullet>& bullet)   //子弹与自机判定
@@ -154,7 +221,7 @@ public:
             t++;
             if (x + w >= tt->x - tt->w && x - w <= tt->x + tt->w && y + h >= tt->y - tt->h && y - h <= tt->y + tt->h)   //碰撞判定，碰到掉血，消除子弹，结束遍历
             {
-                hp--;
+                hp++;
                 bullet.erase(tt);
                 break;
             }
@@ -563,7 +630,7 @@ public:
         {
             if (timek % 50 == 0)    //每秒从上方生成一个向下的敌机
             {
-                EPlane* t = new EPlane1_1(&eplaneImage[0], gw / 2, -100, 40, 40, 10, sustain_time - timek, &ebulletImage[0], 0, 2, 0, 4);
+                EPlane* t = new EPlane1_1(&eplaneImage[0], gw / 2, -100, 30, 25, 10, sustain_time - timek, &ebulletImage[0], 0, 2, 0, 4);
                 eplane.push_back(t);
             }
         }
@@ -571,7 +638,7 @@ public:
         {
             if (timek % 50 == 0) //每秒从左方生成一个向右的敌机
             {
-                EPlane* t = new EPlane1_1(&eplaneImage[0], -100, 100, 40, 40, 10, sustain_time - timek, &ebulletImage[0], 2, 0, 0, 4);
+                EPlane* t = new EPlane1_1(&eplaneImage[0], -100, 100, 30, 25, 10, sustain_time - timek, &ebulletImage[0], 2, 0, 0, 4);
                 eplane.push_back(t);
             }
         }
@@ -579,7 +646,7 @@ public:
         {
             if (timek % 100 == 0)    //每两秒从右方生成一个向左的敌机
             {
-                EPlane* t = new EPlane1_1(&eplaneImage[0], gw+100, 250, 40, 40, 5, sustain_time - timek, &ebulletImage[0], -4, 0, 0, 4);
+                EPlane* t = new EPlane1_1(&eplaneImage[0], gw+100, 250, 30, 25, 5, sustain_time - timek, &ebulletImage[0], -4, 0, 0, 4);
                 eplane.push_back(t);
             }
         }
@@ -587,34 +654,34 @@ public:
         {
             if (timek % 100 == 0)    //每两秒从左方生成一个向右的敌机
             {
-                EPlane* t = new EPlane1_1(&eplaneImage[0], -100, 200, 40, 40, 5, sustain_time - timek, &ebulletImage[0], 4, 0, 4, 4);
+                EPlane* t = new EPlane1_1(&eplaneImage[0], -100, 200, 30, 25, 5, sustain_time - timek, &ebulletImage[0], 4, 0, 4, 4);
                 eplane.push_back(t);
             }
         }
         if (timek == 2000) //第40秒
         {
-            EPlane* t = new EPlane2_1(&eplaneImage[0], -100, 100, 40, 40, 50, 650, &ebulletImage[0], 5, 0, 40, 5, 25, 450, 0, 0);
+            EPlane* t = new EPlane2_1(&eplaneImage[0], -100, 100, 30, 25, 50, 650, &ebulletImage[0], 5, 0, 40, 5, 25, 450, 0, 0);
             eplane.push_back(t);
         }
         if (timek == 2500) //第50秒
         {
-            EPlane* t = new EPlane2_1(&eplaneImage[0], 150, -100, 40, 40, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 300, 0, 0);
+            EPlane* t = new EPlane2_1(&eplaneImage[0], 150, -100, 30, 25, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 300, 0, 0);
             eplane.push_back(t);
-            t = new EPlane2_1(&eplaneImage[0], gw - 150, -100, 40, 40, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 300, 0, 0);
+            t = new EPlane2_1(&eplaneImage[0], gw - 150, -100, 30, 25, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 300, 0, 0);
             eplane.push_back(t);
         }
         if (timek == 3000) //第60秒
         {
-            EPlane* t = new EPlane2_1(&eplaneImage[0], 350, -100, 40, 40, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 300, 2, PI / 6);
+            EPlane* t = new EPlane2_1(&eplaneImage[0], 350, -100, 30, 25, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 300, 2, PI / 6);
             eplane.push_back(t);
-            t = new EPlane2_1(&eplaneImage[0], 450, -100, 40, 40, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 300, 2, PI / 6);
+            t = new EPlane2_1(&eplaneImage[0], 450, -100, 30, 25, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 300, 2, PI / 6);
             eplane.push_back(t);
         }
         if (timek == 3500) //第70秒
         {
             for (int i = 50; i <= 750; i += 100)
             {
-                EPlane* t = new EPlane2_2(&eplaneImage[0], i, -100, 40, 40, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 400, 2, PI / 36);
+                EPlane* t = new EPlane2_2(&eplaneImage[0], i, -100, 30, 25, 20, 450, &ebulletImage[0], 0, 5, 40, 5, 25, 400, 2, PI / 36);
                 eplane.push_back(t);
             }
         }
@@ -706,7 +773,7 @@ public:
         //时间相关区域
         if (timek == 100)     //第2秒
         {
-            EPlane* t = new EPlane3_1(&eplaneImage[0], 370, -100, 40, 40, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
+            EPlane* t = new EPlane3_1(&eplaneImage[0], 370, -100, 30, 25, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
             eplane.push_back(t);
         }
         if (timek > sustain_time)  //18秒
@@ -774,7 +841,8 @@ void run()  //运行函数
     loadimage(&detectImage, _T("images/detect.png"));
 
     //初始化自机
-    Player player(&playerImage, 400, 500, 5, 5, &pbulletImage, &detectImage);
+    Player player(&playerImage, 400, 500, 4, 4, &pbulletImage, &detectImage);
+    player.init();
 
     //场景初始化
     int number = 1;
@@ -801,6 +869,13 @@ void run()  //运行函数
             }
             else if (number >= 3)
             {
+                cleardevice();
+                TCHAR ct[100];
+                _stprintf_s(ct, "恭喜通关，您被击中的次数是%d", player.hp);
+                settextcolor(YELLOW);
+                outtextxy(200, 280, ct);
+                FlushBatchDraw();
+                timer.Sleep(2000);
                 break;
             }
             scene->init(&player);
