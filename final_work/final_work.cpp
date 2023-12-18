@@ -518,6 +518,15 @@ public:
 class EPlane3_1 :public EPlane  //第一种boss，从屏幕外飞入到定点，随后攻击直到消失
 {
 private:
+    int bhp = 0;
+    IMAGE* ebulletImage1;
+
+    int attacki1 = 200;
+    bool lr = 0;
+
+    int attacki2 = 75;
+    bool ud = 0;
+
     double angel = 0;   //角度
     double angelv = 0;  //角速度
     double angela = PI / 360;    //角加速度
@@ -531,12 +540,13 @@ public:
         ;
     }
 
-    EPlane3_1(IMAGE* now, int xx, int yy, int ww, int hh, int hp0, int st, IMAGE* e, int vvx, int vvy, int mt, double bbv) :EPlane(now, xx, yy, ww, hh, hp0, st, e)//有参构造
+    EPlane3_1(IMAGE* now, int xx, int yy, int ww, int hh, int hp0, int st, IMAGE* e, int vvx, int vvy, int mt, double bbv, IMAGE* e1) :EPlane(now, xx, yy, ww, hh, hp0, st, e)//有参构造
     {
         vx = vvx;
         vy = vvy;
         move_time = mt;
         bv = bbv;
+        ebulletImage1 = e1;
     }
 
     void move() //移动
@@ -553,18 +563,77 @@ public:
     {
         if (timek >=move_time)
         {
-            angelv += angela;
-            angel += angelv;
-            double bvx = bv * cos(angel);
-            double bvy = bv * sin(angel);
-            bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
-            bvx = bv * cos(angel + PI * 2 / 3);
-            bvy = bv * sin(angel + PI * 2 / 3);
-            bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
-            bvx = bv * cos(angel - PI * 2 / 3);
-            bvy = bv * sin(angel - PI * 2 / 3);
-            bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
+            if (hp > 400)
+            {
+                if (hp <= 500 || timek >= 1000) attacki1 = 100;
+                if (hp <= 450 || timek >= 1500) attacki1 = 50;
+                if (timek >= 2000) hp = 400;
+                if (timek % attacki1 == 0)
+                {
+                    if (lr)
+                    {
+                        for (int i = 10; i < gh; i += 20)
+                        {
+                            double v = 2 + rand() % 50 / 10.0;
+                            bullet.push_back(Bullet(ebulletImage, gw - 10, i, 10, 10, -v, 0));
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 10; i < gh; i += 20)
+                        {
+                            double v = 2 + rand() % 50 / 10.0;
+                            bullet.push_back(Bullet(ebulletImage, 10, i, 10, 10, v, 0));
+                        }
+                    }
+                    lr = !lr;
+                }
+            }
+            else if (hp > 200)
+            {
+                if (hp <= 300 || timek >= 3000) attacki2 = 25;
+                if (timek >= 4000) hp = 200;
+                if (timek % attacki2 == 0)
+                {
+                    if (ud)
+                    {
+                        int t = 10 + rand() % 31;
+                        for (int i = t; i < gw; i += 50)
+                        {
+                            bullet.push_back(Bullet(ebulletImage1, i, gh - 10, 4, 4, 0, -bv));
+                        }
+                    }
+                    else
+                    {
+                        int t = 10 + rand() % 31;
+                        for (int i = t; i < gw; i += 50)
+                        {
+                            bullet.push_back(Bullet(ebulletImage1, i, 10, 4, 4, 0, bv));
+                        }
+                    }
+                    ud = !ud;
+                }
+            }
+            else
+            {
+                angelv += angela;
+                angel += angelv;
+                double bvx = bv * cos(angel);
+                double bvy = bv * sin(angel);
+                bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
+                bvx = bv * cos(angel + PI * 2 / 3);
+                bvy = bv * sin(angel + PI * 2 / 3);
+                bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
+                bvx = bv * cos(angel - PI * 2 / 3);
+                bvy = bv * sin(angel - PI * 2 / 3);
+                bullet.push_back(Bullet(ebulletImage, x, y, 10, 10, bvx, bvy));
+            }
         }
+        if (hp % 200 == 0 && bhp != hp)
+        {
+            bullet.clear();
+        }
+        bhp = hp;
     }
 };
 
@@ -761,7 +830,7 @@ public:
 
     void init(Player* player) //初始化
     {
-        IMAGE tImage[2];    //加载图片用临时变量
+        IMAGE tImage[3];    //加载图片用临时变量
 
         //加载背景图片
         loadimage(&tImage[0], _T("images/bk.png"));
@@ -772,14 +841,8 @@ public:
         eplaneImage.push_back(tImage[1]);
 
         //加载敌机子弹图片
-        for (int i = 0; i < 9; i++)
-        {
-            char c[50];
-            sprintf_s(c, "images/ebullet%d.png", i);
-            IMAGE t;
-            loadimage(&t, c);
-            ebulletImage.push_back(t);
-        }
+        loadimage(&tImage[2], _T("images/ebullet0.png"));
+        ebulletImage.push_back(tImage[2]);
 
         //加载自机
         this->player = player;
@@ -851,7 +914,7 @@ public:
         }
         if (timek == 4000)   //第80秒
         {
-            EPlane* t = new EPlane3_3(&eplaneImage[0], gw / 2, -100, 30, 25, 200, 1500, &ebulletImage[0], 0, 10, 30, 5,&ebulletImage);
+            EPlane* t = new EPlane3_2(&eplaneImage[0], 400, -100, 30, 25, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
             eplane.push_back(t);
         }
         if (timek > sustain_time)  //120秒
@@ -900,10 +963,17 @@ public:
         cleardevice();
         draw();
         setfillcolor(RED);
-        if (timek >= 4000 && !eplane.empty())
+        if (timek >= 4000)
         {
-            rectangle(0, 0, gw, 5);
-            fillrectangle(0, 0, eplane.front()->hp * gw / 200, 5);
+            if (!eplane.empty())
+            {
+                rectangle(0, 0, gw, 5);
+                fillrectangle(0, 0, eplane.front()->hp* gw / 200, 5);
+            }
+            else
+            {
+                return 1;   //关卡结束
+            }
         }
         FlushBatchDraw();
         return 0;
@@ -923,7 +993,7 @@ public:
 
     void init(Player* player) //初始化
     {
-        IMAGE tImage[3];    //加载图片用临时变量
+        IMAGE tImage[2];    //加载图片用临时变量
 
         //加载背景图片
         loadimage(&tImage[0], _T("images/bk1.png"));
@@ -934,8 +1004,15 @@ public:
         eplaneImage.push_back(tImage[1]);
 
         //加载敌机子弹图片
-        loadimage(&tImage[2], _T("images/ebullet1.png"));
-        ebulletImage.push_back(tImage[2]);
+        for (int i = 0; i < 9; i++)
+        {
+            char c[50];
+            sprintf_s(c, "images/ebullet%d.png", i);
+            IMAGE t;
+            loadimage(&t, c);
+            ebulletImage.push_back(t);
+        }
+        swap(ebulletImage[0], ebulletImage[1]);
 
         //加载自机
         this->player = player;
@@ -995,7 +1072,7 @@ public:
         }
         if (timek == 2100)     //第42秒
         {
-            EPlane* t = new EPlane3_1(&eplaneImage[0], gw / 2, -100, 30, 25, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
+            EPlane* t = new EPlane3_3(&eplaneImage[0], 400, -100, 30, 25, 200, 1500, &ebulletImage[0], 0, 10, 30, 5, &ebulletImage);
             eplane.push_back(t);
         }
         if (timek > sustain_time)  //78秒
@@ -1044,10 +1121,17 @@ public:
         cleardevice();
         draw();
         setfillcolor(RED);
-        if (timek>=2100&&!eplane.empty())
+        if (timek>=2100)
         {
-            rectangle(0, 0, gw, 5);
-            fillrectangle(0, 0, eplane.front()->hp * gw / 200, 5);
+            if (!eplane.empty())
+            {
+                rectangle(0, 0, gw, 5);
+                fillrectangle(0, 0, eplane.front()->hp* gw / 200, 5);
+            }
+            else
+            {
+                return 1;
+            }
         }
         FlushBatchDraw();
         return 0;
@@ -1057,7 +1141,7 @@ public:
 class Scene3 :public Scene
 {
 private:
-    int sustain_time = 1900;
+    int sustain_time = 6100;
 public:
 
     Scene3()    //无参构造
@@ -1067,7 +1151,7 @@ public:
 
     void init(Player* player) //初始化
     {
-        IMAGE tImage[3];    //加载图片用临时变量
+        IMAGE tImage[4];    //加载图片用临时变量
 
         //加载背景图片
         loadimage(&tImage[0], _T("images/bk2.png"));
@@ -1080,6 +1164,8 @@ public:
         //加载敌机子弹图片
         loadimage(&tImage[2], _T("images/ebullet2.png"));
         ebulletImage.push_back(tImage[2]);
+        loadimage(&tImage[3], _T("images/ebullet00.png"));
+        ebulletImage.push_back(tImage[3]);
 
         //加载自机
         this->player = player;
@@ -1092,10 +1178,10 @@ public:
         //时间相关区域
         if (timek == 100)     //第2秒
         {
-            EPlane* t = new EPlane3_2(&eplaneImage[0], gw / 2, -100, 30, 25, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
+            EPlane* t = new EPlane3_1(&eplaneImage[0], 400, -100, 30, 25, 600, sustain_time-timek, &ebulletImage[0], 0, 5, 40, 5, &ebulletImage[1]);
             eplane.push_back(t);
         }
-        if (timek > sustain_time)  //38秒
+        if (timek > sustain_time)  //122秒
         {
             for (auto& t : eplane)  //释放所有未释放内存
             {
@@ -1140,11 +1226,33 @@ public:
         //显示
         cleardevice();
         draw();
-        setfillcolor(RED);
         if (!eplane.empty())
         {
+            int hpt = eplane.front()->hp;
             rectangle(0, 0, gw, 5);
-            fillrectangle(0, 0, eplane.front()->hp * gw / 200, 5);
+            if (hpt > 400)
+            {
+                setfillcolor(GREEN);
+                fillrectangle(0, 0, gw, 5);
+                setfillcolor(BLUE);
+                fillrectangle(0, 0, (hpt - 400) * gw / 200, 5);
+            }
+            else if (hpt > 200)
+            {
+                setfillcolor(RED);
+                fillrectangle(0, 0, gw, 5);
+                setfillcolor(GREEN);
+                fillrectangle(0, 0, (hpt - 200) * gw / 200, 5);
+            }
+            else
+            {
+                setfillcolor(RED);
+                fillrectangle(0, 0, hpt * gw / 200, 5);
+            }
+        }
+        else if (timek > 200)
+        {
+            return 1;
         }
         FlushBatchDraw();
         return 0;
@@ -1165,7 +1273,7 @@ void run()  //运行函数
     player.init();
 
     //场景初始化
-    int number = 1;
+    int number = 3;
     Scene* scene = nullptr;
 
     //窗口初始化
