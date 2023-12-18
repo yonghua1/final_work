@@ -855,31 +855,49 @@ public:
         //时间相关区域
         if (timek >= 200 && timek < 400)   //4~8秒
         {
-            if (timek % 50 == 0)    //每秒从上方生成一个向下的敌机
-            {
-                EPlane* t = new EPlane1_1(&eplaneImage[0], gw / 2, -100, 30, 25, 10, sustain_time - timek, &ebulletImage[0], 0, 2, 0, 4);
-                eplane.push_back(t);
-            }
-        }
-        if (timek >= 500 && timek < 700)  //10~14秒
-        {
             if (timek % 50 == 0) //每秒从左方生成一个向右的敌机
             {
                 EPlane* t = new EPlane1_1(&eplaneImage[0], -100, 100, 30, 25, 10, sustain_time - timek, &ebulletImage[0], 2, 0, 0, 4);
                 eplane.push_back(t);
             }
         }
-        if (timek >= 1000 && timek < 1500) //20~30秒
+        if (timek >= 500 && timek < 800)  //10~16秒
         {
-            if (timek % 100 == 0)    //每两秒从右方生成一个向左的敌机
+            if (timek % 50 == 0)    //每秒从右方生成一个向左的敌机
             {
-                EPlane* t = new EPlane1_1(&eplaneImage[0], gw+100, 250, 30, 25, 5, sustain_time - timek, &ebulletImage[0], -4, 0, 0, 4);
+                EPlane* t = new EPlane1_1(&eplaneImage[0], gw + 100, 250, 30, 25, 5, sustain_time - timek, &ebulletImage[0], -4, 0, 0, 4);
                 eplane.push_back(t);
             }
         }
+        if (timek >= 700 && timek < 1000) //16~20秒
+        {
+            if ((timek + 25) % 50 == 0)
+            {
+                EPlane* t = new EPlane1_1(&eplaneImage[0], -100, 150, 30, 25, 5, sustain_time - timek, &ebulletImage[0], 4, 0, 0, 4);
+                eplane.push_back(t);
+            }
+        }
+        if (timek == 1000) //20秒
+        {
+            EPlane* t = new EPlane2_1(&eplaneImage[0], -100, 100, 30, 25, 50, 650, &ebulletImage[0], 5, 0, 40, 5, 25, 450, 0, 0);
+            eplane.push_back(t);
+        }
+        if (timek >= 1100 && timek < 1300) //22~26秒
+        {
+            if (timek % 40 == 0)
+            {
+                EPlane* t = new EPlane1_1(&eplaneImage[0], 400, -100, 30, 25, 5, sustain_time - timek, &ebulletImage[0], 0, 4, -3, 4);
+                eplane.push_back(t);
+            }
+        }
+        if (timek == 1500) //30秒
+        {
+            EPlane* t = new EPlane2_2(&eplaneImage[0], gw+100, 100, 30, 25, 50, 650, &ebulletImage[0], -5, 0, 40, 5, 25, 450, 2, PI / 36);
+            eplane.push_back(t);
+        }
         if (timek >= 1500 && timek < 2000) //30~40秒
         {
-            if (timek % 100 == 0)    //每两秒从左方生成一个向右的敌机
+            if (timek % 40 == 0)
             {
                 EPlane* t = new EPlane1_1(&eplaneImage[0], -100, 200, 30, 25, 5, sustain_time - timek, &ebulletImage[0], 4, 0, 4, 4);
                 eplane.push_back(t);
@@ -888,6 +906,11 @@ public:
         if (timek == 2000) //第40秒
         {
             EPlane* t = new EPlane2_1(&eplaneImage[0], -100, 100, 30, 25, 50, 650, &ebulletImage[0], 5, 0, 40, 5, 25, 450, 0, 0);
+            eplane.push_back(t);
+        }
+        if (timek == 2200) //第42秒
+        {
+            EPlane* t = new EPlane2_2(&eplaneImage[0], 400, -100, 30, 25, 80, 1300, &ebulletImage[0], 0, 5, 40, 5, 25, 1200, 2, PI / 36);
             eplane.push_back(t);
         }
         if (timek == 2500) //第50秒
@@ -912,9 +935,9 @@ public:
                 eplane.push_back(t);
             }
         }
-        if (timek == 4000)   //第80秒
+        if (timek == 4100)   //第82秒
         {
-            EPlane* t = new EPlane3_2(&eplaneImage[0], 400, -100, 30, 25, 200, 1500, &ebulletImage[0], 0, 5, 40, 5);
+            EPlane* t = new EPlane3_2(&eplaneImage[0], 400, -100, 30, 25, 200, sustain_time-timek, &ebulletImage[0], 0, 5, 40, 5);
             eplane.push_back(t);
         }
         if (timek > sustain_time)  //120秒
@@ -963,7 +986,7 @@ public:
         cleardevice();
         draw();
         setfillcolor(RED);
-        if (timek >= 4000)
+        if (timek >= 4100)
         {
             if (!eplane.empty())
             {
@@ -983,7 +1006,7 @@ public:
 class Scene2 :public Scene  //关卡2
 {
 private:
-    int sustain_time = 3900;
+    int sustain_time = 4000;
 public:
 
     Scene2()    //无参构造
@@ -1072,10 +1095,10 @@ public:
         }
         if (timek == 2100)     //第42秒
         {
-            EPlane* t = new EPlane3_3(&eplaneImage[0], 400, -100, 30, 25, 200, 1500, &ebulletImage[0], 0, 10, 30, 5, &ebulletImage);
+            EPlane* t = new EPlane3_3(&eplaneImage[0], 400, -100, 30, 25, 200, sustain_time - timek, &ebulletImage[0], 0, 10, 30, 5, &ebulletImage);
             eplane.push_back(t);
         }
-        if (timek > sustain_time)  //78秒
+        if (timek > sustain_time)  //80秒
         {
             for (auto& t : eplane)  //释放所有未释放内存
             {
@@ -1273,7 +1296,7 @@ void run()  //运行函数
     player.init();
 
     //场景初始化
-    int number = 3;
+    int number = 1;
     Scene* scene = nullptr;
 
     //窗口初始化
